@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shopkeeper Stock & Billing System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <section id="authScreen" class="auth-screen">
+      <div class="auth-card">
+        <div class="auth-heading">
+          <h2>Shopkeeper Stock & Billing</h2>
+          <p>Sign in to access your workspace, inventory, and billing data.</p>
+        </div>
+
+        <div class="auth-tabs" role="tablist" aria-label="Authentication modes">
+          <button id="showLoginBtn" class="auth-tab active" type="button" role="tab">
+            Login
+          </button>
+          <button id="showRegisterBtn" class="auth-tab" type="button" role="tab">
+            Create Account
+          </button>
+        </div>
+
+        <form id="loginForm" class="auth-form active" autocomplete="off">
+          <label for="loginUsername">Username</label>
+          <input id="loginUsername" type="text" minlength="3" required />
+
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" minlength="6" required />
+
+          <button class="primary-btn" type="submit">Sign In</button>
+        </form>
+
+        <form id="registerForm" class="auth-form" autocomplete="off">
+          <label for="registerName">Display Name</label>
+          <input id="registerName" type="text" minlength="2" required />
+
+          <label for="registerUsername">Username</label>
+          <input id="registerUsername" type="text" minlength="3" required />
+
+          <label for="registerPassword">Password</label>
+          <input id="registerPassword" type="password" minlength="6" required />
+
+          <label for="registerConfirmPassword">Confirm Password</label>
+          <input id="registerConfirmPassword" type="password" minlength="6" required />
+
+          <button class="success-btn" type="submit">Create Account</button>
+        </form>
+
+        <p id="authMessage" class="auth-message" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <div id="appShell" class="app-shell app-hidden">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">SS</div>
+          <div>
+            <h1>Shopkeeper Stock</h1>
+            <p>Billing System</p>
+          </div>
+        </div>
+
+        <nav class="nav-links" aria-label="Main navigation">
+          <button class="nav-link active" type="button" data-section="dashboard">
+            Dashboard
+          </button>
+          <button class="nav-link" type="button" data-section="inventory">
+            Inventory
+          </button>
+          <button class="nav-link" type="button" data-section="billing">Billing</button>
+          <button class="nav-link" type="button" data-section="finance">Finance</button>
+          <button class="nav-link" type="button" data-section="history">History</button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <label class="theme-switch" for="themeToggle">
+            <input id="themeToggle" type="checkbox" />
+            <span class="switch-track">
+              <span class="switch-knob"></span>
+            </span>
+            <span class="switch-text">Dark mode</span>
+          </label>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div>
+            <h2 id="sectionTitle">Dashboard</h2>
+            <p id="sectionSubtitle">
+              Track your shop performance, inventory health, and billing in one workspace.
+            </p>
+          </div>
+          <div class="topbar-meta">
+            <span id="dbStatusBadge" class="db-status-badge fallback">Database: Fallback</span>
+            <div class="user-row">
+              <span id="currentUserBadge" class="user-badge">Not Signed In</span>
+              <button id="logoutBtn" class="ghost-btn compact-btn auth-hidden" type="button">
+                Logout
+              </button>
+            </div>
+            <span id="currentDate"></span>
+          </div>
+        </header>
+
+        <section id="dashboard" class="content-section active" aria-label="Dashboard section">
+          <div class="stats-grid">
+            <article class="stat-card">
+              <h3>Total Products</h3>
+              <strong id="statTotalProducts">0</strong>
+              <p>Products currently listed in inventory</p>
+            </article>
+            <article class="stat-card">
+              <h3>Total Sales</h3>
+              <strong id="statTotalSales">INR 0.00</strong>
+              <p>Cumulative sales from completed bills</p>
+            </article>
+            <article class="stat-card">
+              <h3>Bills Generated</h3>
+              <strong id="statBillsCount">0</strong>
+              <p>Total invoices checked out so far</p>
+            </article>
+            <article class="stat-card accent">
+              <h3>Low Stock Alerts</h3>
+              <strong id="statLowStockCount">0</strong>
+              <p>Products with quantity lower than 5</p>
+            </article>
+          </div>
+
+          <div class="stats-grid finance-strip">
+            <article class="stat-card">
+              <h3>Monthly Profit</h3>
+              <strong id="dashMonthlyProfit">INR 0.00</strong>
+              <p>Gross profit earned in current month</p>
+            </article>
+            <article class="stat-card accent">
+              <h3>Net Profit (Current Month)</h3>
+              <strong id="dashNetProfitCurrentMonth">INR 0.00</strong>
+              <p>Monthly profit minus expense of current month</p>
+            </article>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <h3>Sales Trend (Last 6 Months)</h3>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="dashboardSalesChart" class="sales-chart" aria-label="Dashboard sales trend chart"></canvas>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <h3>Recent Bills</h3>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Bill ID</th>
+                    <th>Bill Name</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="recentBillsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="inventory" class="content-section" aria-label="Inventory section">
+          <div class="two-col">
+            <article class="panel">
+              <div class="panel-heading">
+                <h3>Add Product</h3>
+              </div>
+              <form id="productForm" class="form-grid" autocomplete="off">
+                <label for="productName">Product Name</label>
+                <input id="productName" name="name" type="text" placeholder="e.g. Basmati Rice" required />
+
+                <label for="productPrice">Price</label>
+                <input
+                  id="productPrice"
+                  name="price"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="e.g. 120"
+                  required
+                />
+
+                <label for="productCostPrice">Cost Price</label>
+                <input
+                  id="productCostPrice"
+                  name="costPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 90"
+                  required
+                />
+
+                <label for="productQuantity">Quantity</label>
+                <input
+                  id="productQuantity"
+                  name="quantity"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="e.g. 30"
+                  required
+                />
+
+                <button class="primary-btn" type="submit">Add Product</button>
+              </form>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <h3>Inventory Controls</h3>
+              </div>
+              <div class="search-box">
+                <input
+                  id="inventorySearch"
+                  type="text"
+                  placeholder="Search products by name"
+                  aria-label="Search products"
+                />
+              </div>
+              <p class="muted-text">Low stock rows are highlighted automatically for quick action.</p>
+            </article>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <h3>Inventory List</h3>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Cost Price</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="billing" class="content-section" aria-label="Billing section">
+          <div class="two-col">
+            <article class="panel">
+              <div class="panel-heading">
+                <h3>Create Bill</h3>
+              </div>
+              <form id="billItemForm" class="form-grid billing-form" autocomplete="off">
+                <label for="billingNameInput">Bill Name</label>
+                <input
+                  id="billingNameInput"
+                  type="text"
+                  maxlength="80"
+                  placeholder="e.g. Ramesh Kirana - April"
+                />
+
+                <label for="billingPaymentType">Payment Type</label>
+                <select id="billingPaymentType" required>
+                  <option value="paid">Paid Now</option>
+                  <option value="paylater">Pay Later</option>
+                </select>
+
+                <label for="billingProductSelect">Select Product</label>
+                <select id="billingProductSelect" required></select>
+
+                <label for="billingQuantity">Quantity</label>
+                <input id="billingQuantity" type="number" min="1" step="1" required />
+
+                <button class="primary-btn" type="submit">Add Item To Bill</button>
+              </form>
+
+              <div class="bill-total-strip">
+                <span>Current Bill Total</span>
+                <strong id="currentBillTotal">INR 0.00</strong>
+              </div>
+            </article>
+
+            <article class="panel invoice-live">
+              <div class="panel-heading">
+                <h3>Invoice Preview</h3>
+              </div>
+              <div id="invoicePreview" class="invoice-preview"></div>
+            </article>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading row-between">
+              <h3>Bill Items</h3>
+              <div class="actions-inline">
+                <button id="clearBillBtn" class="ghost-btn" type="button">Clear</button>
+                <button id="openInvoiceBtn" class="primary-btn" type="button">
+                  Preview & Checkout
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="billItemsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="finance" class="content-section" aria-label="Finance section">
+          <div class="two-col">
+            <article class="panel">
+              <div class="panel-heading">
+                <h3>Current Month Summary</h3>
+              </div>
+              <div class="finance-stats-grid">
+                <article class="stat-card">
+                  <h3>Current Month Sales</h3>
+                  <strong id="financeCurrentMonthSales">INR 0.00</strong>
+                  <p>Total billed sales in current month</p>
+                </article>
+                <article class="stat-card">
+                  <h3>Monthly Profit</h3>
+                  <strong id="financeMonthlyProfit">INR 0.00</strong>
+                  <p>Sales minus cost price and monthly expense</p>
+                </article>
+                <article class="stat-card accent">
+                  <h3>Net Profit (Current Month)</h3>
+                  <strong id="financeNetProfitCurrentMonth">INR 0.00</strong>
+                  <p>Monthly profit after monthly expense</p>
+                </article>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <h3>Monthly Expense</h3>
+              </div>
+              <form id="financeExpenseForm" class="form-grid" autocomplete="off">
+                <label for="financeExpenseInput">Expense For Current Month</label>
+                <input
+                  id="financeExpenseInput"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 5000"
+                  required
+                />
+                <button id="saveFinanceExpenseBtn" class="primary-btn" type="submit">Save Expense</button>
+              </form>
+            </article>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <h3>Sales Trend (Last 6 Months)</h3>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="financeSalesChart" class="sales-chart" aria-label="Finance sales trend chart"></canvas>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <h3>Monthly Profit Breakdown</h3>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Sales</th>
+                    <th>Profit</th>
+                  </tr>
+                </thead>
+                <tbody id="financeMonthlyTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <h3>Pay Later Bills</h3>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Bill ID</th>
+                    <th>Bill Name</th>
+                    <th>Date</th>
+                    <th>Due Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="payLaterTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="history" class="content-section" aria-label="History section">
+          <div class="stats-grid finance-strip history-strip">
+            <article class="stat-card">
+              <h3>Total Bills</h3>
+              <strong id="historyTotalBills">0</strong>
+              <p>All bills shown by the selected calendar filter</p>
+            </article>
+            <article class="stat-card accent">
+              <h3>Total Pay Later Bills</h3>
+              <strong id="historyPayLaterBills">0</strong>
+              <p>Pending bills included in the current history view</p>
+            </article>
+            <article class="stat-card">
+              <h3>Total Pay Later Due</h3>
+              <strong id="historyPayLaterDue">INR 0.00</strong>
+              <p>Outstanding pay-later amount in the current view</p>
+            </article>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading row-between">
+              <h3>Bill History</h3>
+              <div class="history-filters">
+                <select id="historyMonthFilter" aria-label="Filter history by month"></select>
+                <select id="historyYearFilter" aria-label="Filter history by year"></select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Bill ID</th>
+                    <th>Bill Name</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody"></tbody>
+              </table>
+            </div>
+            <div class="panel-footer history-footer">
+              <button id="historyPrevPageBtn" class="ghost-btn" type="button">Previous</button>
+              <span id="historyPageInfo" class="history-page-info">Page 1 of 1</span>
+              <button id="historyNextPageBtn" class="ghost-btn" type="button">Next</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="editModal" class="modal" aria-hidden="true">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Product</h3>
+          <button id="closeEditModalBtn" class="icon-btn" type="button" aria-label="Close edit modal">
+            x
+          </button>
+        </div>
+
+        <form id="editProductForm" class="form-grid" autocomplete="off">
+          <input id="editProductId" type="hidden" />
+
+          <label for="editProductName">Product Name</label>
+          <input id="editProductName" type="text" required />
+
+          <label for="editProductPrice">Price</label>
+          <input id="editProductPrice" type="number" min="0.01" step="0.01" required />
+
+          <label for="editProductCostPrice">Cost Price</label>
+          <input id="editProductCostPrice" type="number" min="0" step="0.01" required />
+
+          <label for="editProductQuantity">Quantity</label>
+          <input id="editProductQuantity" type="number" min="0" step="1" required />
+
+          <div class="modal-actions">
+            <button id="cancelEditBtn" class="ghost-btn" type="button">Cancel</button>
+            <button class="primary-btn" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="invoiceModal" class="modal" aria-hidden="true">
+      <div class="modal-content invoice-modal-content">
+        <div class="modal-header">
+          <h3>Invoice Preview</h3>
+          <button
+            id="closeInvoiceModalBtn"
+            class="icon-btn"
+            type="button"
+            aria-label="Close invoice modal"
+          >
+            x
+          </button>
+        </div>
+
+        <div id="invoiceModalBody" class="invoice-preview large"></div>
+
+        <div class="modal-actions">
+          <button id="cancelInvoiceBtn" class="ghost-btn" type="button">Back</button>
+          <button id="finalizeCheckoutBtn" class="success-btn" type="button">
+            Finalize Checkout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="billDetailsModal" class="modal" aria-hidden="true">
+      <div class="modal-content invoice-modal-content">
+        <div class="modal-header">
+          <h3>Bill Details</h3>
+          <button
+            id="closeBillDetailsModalBtn"
+            class="icon-btn"
+            type="button"
+            aria-label="Close bill details modal"
+          >
+            x
+          </button>
+        </div>
+
+        <div id="billDetailsModalBody" class="invoice-preview large"></div>
+
+        <div class="modal-actions">
+          <button id="markBillPaidBtn" class="success-btn app-hidden" type="button">Mark As Paid</button>
+          <button id="dismissBillDetailsBtn" class="primary-btn" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="appToast" class="toast" aria-live="polite"></div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
